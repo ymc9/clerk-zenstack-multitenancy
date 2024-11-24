@@ -17,13 +17,16 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
+/**
+ * Gets an enhanced PrismaClient for the current user
+ */
 export async function getUserDb() {
   const { userId, orgId, orgRole } = await auth();
   const user = userId
     ? {
         userId,
-        orgId,
-        role:
+        currentOrgId: orgId,
+        currentOrgRole:
           orgRole === "org:admin"
             ? Role.ADMIN
             : orgRole === "org:member"

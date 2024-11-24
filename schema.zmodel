@@ -7,18 +7,27 @@ generator js {
   provider = "prisma-client-js"
 }
 
+/// User's role in an organization, mapped from Clerk's default roles
 enum Role {
   ADMIN
   MEMBER
 }
 
+/// The shape of `auth()`
 type Auth {
-  userId String  @id
-  orgId  String?
-  role   Role?
+  /// Current user's ID
+  userId         String  @id
+
+  /// User's current organization ID
+  currentOrgId   String?
+
+  /// User's role in the current organization
+  currentOrgRole Role?
+
   @@auth
 }
 
+/// User model, synced from Clerk
 model User {
   id                 String                   @id
   email              String?
@@ -27,9 +36,11 @@ model User {
   ownedOrganizations Organization[]
   lists              List[]
 
+  // readable by the user or any member sharing an organization with the user
   @@allow('read', auth().userId == id || memberships?[org.memberships?[userId == auth().userId]])
 }
 
+/// Organization model, synced from Clerk
 model Organization {
   id          String                   @id
   name        String
@@ -38,9 +49,11 @@ model Organization {
   owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId     String
 
-  @@allow('read', auth().orgId == id)
+  // readable by users within the organization
+  @@allow('read', auth().currentOrgId == id)
 }
 
+/// Organization membership, synced from Clerk
 model OrganizationMembership {
   id     String       @id
   user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -49,16 +62,17 @@ model OrganizationMembership {
   orgId  String
   role   Role
 
+  // same readability as the organization
   @@allow('read', check(org))
 }
 
-// todo list
+/// Todo list
 model List {
   id        String        @id @default(cuid())
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   org       Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String?       @default(auth().orgId) @deny('update', true)
+  orgId     String?       @default(auth().currentOrgId) @deny('update', true)
   owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId   String        @default(auth().userId) @deny('update', true)
   title     String
@@ -68,11 +82,11 @@ model List {
   // require login
   @@deny('all', auth() == null)
 
-  // deny all access if the user's current org doesn't match
-  @@deny('all', auth().orgId != orgId)
+  // tenant segregation: deny access if the user's current org doesn't match
+  @@deny('all', auth().currentOrgId != orgId)
 
   // owner/admin has full access
-  @@allow('all', auth().userId == ownerId || auth().role == ADMIN)
+  @@allow('all', auth().userId == ownerId || auth().currentOrgRole == ADMIN)
 
   // can be read by org members if not private
   @@allow('read', !private)
@@ -81,7 +95,7 @@ model List {
   @@allow('create', ownerId == auth().userId)
 }
 
-// todo item
+/// Todo item
 model Todo {
   id          String    @id @default(cuid())
   createdAt   DateTime  @default(now())

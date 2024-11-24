@@ -12,11 +12,13 @@ generator js {
   provider = "prisma-client-js"
 }
 
+/// User's role in an organization, mapped from Clerk's default roles
 enum Role {
   ADMIN
   MEMBER
 }
 
+/// User model, synced from Clerk
 model User {
   id                 String                   @id()
   email              String?
@@ -26,6 +28,7 @@ model User {
   lists              List[]
 }
 
+/// Organization model, synced from Clerk
 model Organization {
   id          String                   @id()
   name        String
@@ -35,6 +38,7 @@ model Organization {
   ownerId     String
 }
 
+/// Organization membership, synced from Clerk
 model OrganizationMembership {
   id     String       @id()
   user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -44,6 +48,7 @@ model OrganizationMembership {
   role   Role
 }
 
+/// Todo list
 model List {
   id        String        @id() @default(cuid())
   createdAt DateTime      @default(now())
@@ -57,6 +62,7 @@ model List {
   todos     Todo[]
 }
 
+/// Todo item
 model Todo {
   id          String    @id() @default(cuid())
   createdAt   DateTime  @default(now())
