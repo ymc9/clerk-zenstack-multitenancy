@@ -1,37 +1,30 @@
-"use client";
-
 import Link from "next/link";
-import { useCreateList, useFindManyList } from "~/lib/hooks";
+import { getUserDb } from "~/server/db";
+import CreateList from "./CreateList";
 
-export default function TodoLists() {
-  const { data: lists } = useFindManyList({
+export default async function TodoLists() {
+  const db = await getUserDb();
+
+  const lists = await db.list.findMany({
     include: { owner: true },
     orderBy: { updatedAt: "desc" },
   });
 
-  const { mutate: createList } = useCreateList();
-
-  if (!lists) return null;
-
-  function onCreateList() {
-    const title = prompt("Enter a title for your list");
-    if (title) {
-      createList({ data: { title } });
-    }
-  }
-
   return (
     <div className="container mx-auto mt-8">
       <div className="p-8">
-        <button className="btn btn-primary btn-wide" onClick={onCreateList}>
-          Create a list
-        </button>
+        <CreateList />
 
         <ul className="mt-8 flex flex-wrap gap-6">
           {lists?.map((list) => (
             <Link href={`/lists/${list.id}`} key={list.id}>
-              <li className="flex h-32 w-72 items-center justify-center rounded-lg border text-2xl">
+              <li className="relative flex h-28 w-64 items-center justify-center rounded-lg border text-xl">
                 {list.title}
+                {list.private && (
+                  <span className="absolute bottom-3 right-3 text-xs font-light italic">
+                    Private
+                  </span>
+                )}
               </li>
             </Link>
           ))}

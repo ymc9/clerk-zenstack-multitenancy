@@ -7,12 +7,6 @@ generator js {
   provider = "prisma-client-js"
 }
 
-plugin hooks {
-  provider = '@zenstackhq/tanstack-query'
-  target = 'react'
-  output = 'src/lib/hooks'
-}
-
 enum Role {
   ADMIN
   MEMBER
@@ -21,12 +15,8 @@ enum Role {
 type Auth {
   userId String  @id
   orgId  String?
+  role   Role?
   @@auth
-}
-
-plugin enhancer {
-  provider = '@core/enhancer'
-  preserveTsFiles = true
 }
 
 model User {
@@ -76,22 +66,19 @@ model List {
   todos     Todo[]
 
   // require login
-  @@deny('all', auth().userId == null)
+  @@deny('all', auth() == null)
 
   // deny all access if the user's current org doesn't match
   @@deny('all', auth().orgId != orgId)
 
-  // owner has full access in current org
-  @@allow('all', auth().userId == ownerId)
-
-  // org admin has full access
-  @@allow('all', orgId != null && (org.memberships?[user.id == auth().userId && role == ADMIN]))
+  // owner/admin has full access
+  @@allow('all', auth().userId == ownerId || auth().role == ADMIN)
 
   // can be read by org members if not private
-  @@allow('read', orgId != null && auth().orgId == orgId && !private)
+  @@allow('read', !private)
 
-  // when create, owner must be set to current user, and user must be in the space
-  @@allow('create', ownerId == auth().userId && orgId == auth().orgId)
+  // when create, owner must be set to current user
+  @@allow('create', ownerId == auth().userId)
 }
 
 // todo item

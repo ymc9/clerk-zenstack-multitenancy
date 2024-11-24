@@ -1,27 +1,19 @@
+"use client";
+
 import type { Todo } from "@prisma/client";
-import { useDeleteTodo, useUpdateTodo } from "~/lib/hooks";
+import { deleteTodo, toggleTodoCompleted } from "~/app/actions";
 
 type Props = {
   value: Todo;
-  optimistic?: boolean;
 };
 
-export default function TodoComponent({ value, optimistic }: Props) {
-  const update = useUpdateTodo({ optimisticUpdate: true });
-  const del = useDeleteTodo({ optimisticUpdate: true });
-
+export default function TodoComponent({ value }: Props) {
   function onDelete() {
-    del.mutate({ where: { id: value.id } });
+    deleteTodo(value.id);
   }
 
-  function onToggleCompleted(completed: boolean) {
-    if (completed === !!value.completedAt) {
-      return;
-    }
-    update.mutate({
-      where: { id: value.id },
-      data: { completedAt: completed ? new Date() : null },
-    });
+  function onToggleCompleted() {
+    toggleTodoCompleted(value.id, !value.completedAt);
   }
 
   return (
@@ -37,16 +29,13 @@ export default function TodoComponent({ value, optimistic }: Props) {
                     }`}
         >
           {value.title}
-          {optimistic && (
-            <span className="loading loading-spinner loading-sm ml-1"></span>
-          )}
         </h3>
         <div className="flex">
           <input
             type="checkbox"
             className="checkbox mr-2"
             checked={!!value.completedAt}
-            onChange={(e) => onToggleCompleted(e.currentTarget.checked)}
+            onChange={() => onToggleCompleted()}
           />
           <button className="btn btn-ghost btn-xs" onClick={onDelete}>
             Delete

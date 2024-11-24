@@ -11,16 +11,14 @@
     "postinstall": "prisma generate",
     "lint": "next lint",
     "start": "next start",
-    "up": "npm i -D zenstack@latest && npm i @zenstackhq/runtime@latest @zenstackhq/server@latest @zenstackhq/tanstack-query@latest"
+    "up": "npm i -D zenstack@latest && npm i @zenstackhq/runtime@latest"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.5.0",
     "@prisma/client": "^5.16.2",
     "@t3-oss/env-nextjs": "^0.7.1",
-    "@tanstack/react-query": "^5.10.0",
     "@zenstackhq/runtime": "^2.9.2",
     "@zenstackhq/server": "^2.9.2",
-    "@zenstackhq/tanstack-query": "^2.9.2",
     "nanoid": "^5.0.3",
     "next": "^14.2.18",
     "react": "^18.3.1",

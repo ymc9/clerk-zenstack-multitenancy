@@ -1,19 +1,9 @@
-"use client";
-
-import { useOrganization, useUser } from "@clerk/nextjs";
-import { useQueryClient } from "@tanstack/react-query";
+import { currentUser } from "@clerk/nextjs/server";
 import type { NextPage } from "next";
-import { useEffect } from "react";
 import TodoLists from "~/components/TodoLists";
 
-const Home: NextPage = () => {
-  const { user } = useUser();
-  const { organization } = useOrganization();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    queryClient.invalidateQueries();
-  }, [organization]);
+const Home: NextPage = async () => {
+  const user = await currentUser();
 
   if (!user) {
     return <div>Please signin</div>;
@@ -23,8 +13,7 @@ const Home: NextPage = () => {
     <div className="container mx-auto flex justify-center">
       <div className="mt-8 flex w-full flex-col items-center">
         <h1 className="text-center text-2xl">
-          Welcome{organization ? ` to "${organization?.name}"` : ""},{" "}
-          {user.fullName ?? user.emailAddresses?.[0]?.emailAddress}!
+          Welcome, {user.fullName ?? user.emailAddresses?.[0]?.emailAddress}!
         </h1>
         <TodoLists />
       </div>

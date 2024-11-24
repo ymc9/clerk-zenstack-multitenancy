@@ -9,7 +9,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
-import QueryClientProvider from "~/components/QueryClientProvider";
+import Link from "next/link";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,14 +37,17 @@ export default function RootLayout({
             </SignedOut>
             <SignedIn>
               <div className="flex justify-between">
-                <OrganizationSwitcher />
-                <UserButton />
+                <Link href="/">
+                  <h1>Home</h1>
+                </Link>
+                <div className="flex gap-2">
+                  <OrganizationSwitcher />
+                  <UserButton />
+                </div>
               </div>
             </SignedIn>
           </header>
-          <main className="p-4">
-            <QueryClientProvider>{children}</QueryClientProvider>
-          </main>
+          <main className="p-4">{children}</main>
         </body>
       </html>
     </ClerkProvider>

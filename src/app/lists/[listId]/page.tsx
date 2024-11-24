@@ -1,88 +1,42 @@
-"use client";
-
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import CreateTodo from "~/components/CreateTodo";
+import DeleteList from "~/components/DeleteList";
+import PrivateListToggle from "~/components/PrivateListToggle";
 import TodoComponent from "~/components/Todo";
-import {
-  useCreateTodo,
-  useFindManyTodo,
-  useFindUniqueList,
-  useUpdateList,
-} from "~/lib/hooks";
+import { getUserDb } from "~/server/db";
 
-export default function TodoList() {
-  const { listId } = useParams<{ listId: string }>();
+export default async function TodoList({
+  params,
+}: {
+  params: Promise<{ listId: string }>;
+}) {
+  const { listId } = await params;
+  const db = await getUserDb();
 
-  const { data: list, isLoading } = useFindUniqueList({
+  const list = await db.list.findUnique({
     where: { id: listId },
+    include: { todos: true },
   });
-
-  const { mutate: create } = useCreateTodo({ optimisticUpdate: true });
-  const { mutate: updateList } = useUpdateList({ optimisticUpdate: true });
-  const { data: todos } = useFindManyTodo({
-    where: { listId },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const [title, setTitle] = useState("");
-
-  if (isLoading) {
-    return <p>Loading ...</p>;
-  }
 
   if (!list) {
     return <p>List not found</p>;
   }
 
-  function onCreate() {
-    create({
-      data: {
-        title,
-        list: { connect: { id: listId } },
-      },
-    });
-    setTitle("");
-  }
-
-  function onTogglePrivate() {
-    if (list) {
-      updateList({ where: { id: listId }, data: { private: !list.private } });
-    }
-  }
-
   return (
     <div>
       <div className="container mx-auto flex w-full flex-col items-center py-8">
-        <div className="flex items-baseline gap-2">
+        <div className="mb-4 flex flex-col items-center">
           <h1 className="mb-4 text-2xl font-semibold">{list.title}</h1>
-          <button className="btn btn-link btn-xs" onClick={onTogglePrivate}>
-            Set {list.private ? "Public" : "Private"}
-          </button>
+          <div className="flex">
+            <PrivateListToggle list={list} />
+            <DeleteList list={list} />
+          </div>
         </div>
         <div className="flex space-x-2">
-          <input
-            type="text"
-            placeholder="Type a title and press enter"
-            className="input input-bordered mt-2 w-72 max-w-xs"
-            value={title}
-            autoFocus
-            onKeyUp={(e) => {
-              if (e.key === "Enter") {
-                onCreate();
-              }
-            }}
-            onChange={(e) => {
-              setTitle(e.currentTarget.value);
-            }}
-          />
+          <CreateTodo list={list} />
         </div>
         <ul className="flex w-auto flex-col space-y-4 py-8">
-          {todos?.map((todo) => (
-            <TodoComponent
-              key={todo.id}
-              value={todo}
-              optimistic={todo.$optimistic}
-            />
+          {list.todos.map((todo) => (
+            <TodoComponent key={todo.id} value={todo} />
           ))}
         </ul>
       </div>
