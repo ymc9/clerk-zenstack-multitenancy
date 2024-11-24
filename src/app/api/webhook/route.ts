@@ -105,6 +105,8 @@ export async function POST(req: Request) {
         },
       });
       break;
+
+    // TODO: handling more events like "user.updated", "user.deleted", etc.
   }
 
   return new Response("Webhook received", { status: 200 });
