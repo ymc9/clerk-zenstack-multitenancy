@@ -1,0 +1,109 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator js {
+  provider = "prisma-client-js"
+}
+
+plugin hooks {
+  provider = '@zenstackhq/tanstack-query'
+  target = 'react'
+  output = 'src/lib/hooks'
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+type Auth {
+  userId String  @id
+  orgId  String?
+  @@auth
+}
+
+plugin enhancer {
+  provider = '@core/enhancer'
+  preserveTsFiles = true
+}
+
+model User {
+  id                 String                   @id
+  email              String?
+  name               String?
+  memberships        OrganizationMembership[]
+  ownedOrganizations Organization[]
+  lists              List[]
+
+  @@allow('read', auth().userId == id || memberships?[org.memberships?[userId == auth().userId]])
+}
+
+model Organization {
+  id          String                   @id
+  name        String
+  memberships OrganizationMembership[]
+  lists       List[]
+  owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+
+  @@allow('read', auth().orgId == id)
+}
+
+model OrganizationMembership {
+  id     String       @id
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId  String
+  role   Role
+
+  @@allow('read', check(org))
+}
+
+// todo list
+model List {
+  id        String        @id @default(cuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  org       Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId     String?       @default(auth().orgId) @deny('update', true)
+  owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String        @default(auth().userId) @deny('update', true)
+  title     String
+  private   Boolean       @default(false)
+  todos     Todo[]
+
+  // require login
+  @@deny('all', auth().userId == null)
+
+  // deny all access if the user's current org doesn't match
+  @@deny('all', auth().orgId != orgId)
+
+  // owner has full access in current org
+  @@allow('all', auth().userId == ownerId)
+
+  // org admin has full access
+  @@allow('all', orgId != null && (org.memberships?[user.id == auth().userId && role == ADMIN]))
+
+  // can be read by org members if not private
+  @@allow('read', orgId != null && auth().orgId == orgId && !private)
+
+  // when create, owner must be set to current user, and user must be in the space
+  @@allow('create', ownerId == auth().userId && orgId == auth().orgId)
+}
+
+// todo item
+model Todo {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  list        List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId      String
+  title       String
+  completedAt DateTime?
+
+  // full access if the parent list is readable
+  @@allow('all', check(list, 'read'))
+}
