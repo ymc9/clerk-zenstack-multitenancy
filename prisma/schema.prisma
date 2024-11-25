@@ -12,53 +12,15 @@ generator js {
   provider = "prisma-client-js"
 }
 
-/// User's role in an organization, mapped from Clerk's default roles
-enum Role {
-  ADMIN
-  MEMBER
-}
-
-/// User model, synced from Clerk
-model User {
-  id                 String                   @id()
-  email              String?
-  name               String?
-  memberships        OrganizationMembership[]
-  ownedOrganizations Organization[]
-  lists              List[]
-}
-
-/// Organization model, synced from Clerk
-model Organization {
-  id          String                   @id()
-  name        String
-  memberships OrganizationMembership[]
-  lists       List[]
-  owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-}
-
-/// Organization membership, synced from Clerk
-model OrganizationMembership {
-  id     String       @id()
-  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId  String
-  role   Role
-}
-
 /// Todo list
 model List {
-  id        String        @id() @default(cuid())
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt()
-  org       Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id        String   @id() @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
   orgId     String?
-  owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId   String
   title     String
-  private   Boolean       @default(false)
+  private   Boolean  @default(false)
   todos     Todo[]
 }
 

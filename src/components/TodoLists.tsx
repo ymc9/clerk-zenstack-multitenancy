@@ -5,10 +5,7 @@ import CreateList from "./CreateList";
 export default async function TodoLists() {
   const db = await getUserDb();
 
-  const lists = await db.list.findMany({
-    include: { owner: true },
-    orderBy: { updatedAt: "desc" },
-  });
+  const lists = await db.list.findMany({ orderBy: { createdAt: "desc" } });
 
   return (
     <div className="container mx-auto mt-8">

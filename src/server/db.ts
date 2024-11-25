@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { enhance } from "@zenstackhq/runtime";
 
 const globalForPrisma = globalThis as unknown as {
@@ -26,12 +26,7 @@ export async function getUserDb() {
     ? {
         userId,
         currentOrgId: orgId,
-        currentOrgRole:
-          orgRole === "org:admin"
-            ? Role.ADMIN
-            : orgRole === "org:member"
-              ? Role.MEMBER
-              : undefined,
+        currentOrgRole: orgRole,
       }
     : undefined;
   return enhance(prisma, { user });
